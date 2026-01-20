@@ -1,0 +1,68 @@
+name: ECS App Deployment
+
+on:
+  push:
+    paths:
+      - 'app/**'
+      - '.github/workflows/app-depoy.yaml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: dev
+    env:
+      AWS_REGION: ap-south-1
+      PROJECT_NAME: bluegreen
+      ECR_REPO: pythonbluegreen
+      IMAGE_TAG: latest
+      CONTAINER_NAME: pythonbluegreen
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to ECR
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Build & Push Docker Image
+        run: |
+          docker build -t $ECR_REPO:$IMAGE_TAG ./app
+          docker tag $ECR_REPO:$IMAGE_TAG ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+          docker push ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPO:$IMAGE_TAG
+
+      - name: Register New ECS Task Definition
+        id: taskdef
+        run: |
+          NEW_IMAGE="${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.${{ env.AWS_REGION }}.amazonaws.com/$ECR_REPO:$IMAGE_TAG"
+
+          # Get the current task definition JSON
+          aws ecs describe-task-definition \
+            --task-definition ${PROJECT_NAME}-task \
+            --query "taskDefinition" > taskdef.json
+
+          # Update the container image
+          jq --arg IMAGE "$NEW_IMAGE" '.containerDefinitions[0].image=$IMAGE | del(.taskDefinitionArn,.revision,.status,.requiresAttributes,.compatibilities,.registeredAt,.registeredBy)' taskdef.json > new-taskdef.json
+
+          # Register the new task definition
+          TASK_DEF_ARN=$(aws ecs register-task-definition \
+            --cli-input-json file://new-taskdef.json \
+            --query "taskDefinition.taskDefinitionArn" --output text)
+
+          echo "TASK_DEFINITION_ARN=$TASK_DEF_ARN" >> $GITHUB_ENV
+
+  
+      - name: Trigger ECS Blue/Green Deployment
+        run: |
+          aws deploy create-deployment \
+            --application-name ${PROJECT_NAME}-codedeploy-app \
+            --deployment-group-name ${PROJECT_NAME}-deployment-group \
+            --revision "{\"revisionType\":\"AppSpecContent\",\"appSpecContent\":{\"content\":\"version: 0.0\nResources:\n  - TargetService:\n      Type: AWS::ECS::Service\n      Properties:\n        TaskDefinition: ${TASK_DEFINITION_ARN}\n        LoadBalancerInfo:\n          ContainerName: ${CONTAINER_NAME}\n          ContainerPort: 5000\"}}" \
+            --description "Deploy latest Docker image"
+

@@ -1,0 +1,47 @@
+name: Terraform Infra Pipeline
+
+on:
+  push:
+    paths:
+      - 'main.tf'
+      - 'variables.tf'
+      - 'provider.tf'
+      - 'terraform.tfvars'
+      - 'modules/**'
+      - '.github/workflows/infra.yaml'
+
+jobs:
+  terraform:
+    runs-on: ubuntu-latest
+    environment: 
+      name: dev
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-south-1
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.5.7
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Format
+        run: terraform fmt 
+
+      - name: Terraform Plan
+        run: terraform plan -var="image_url=${{ vars.IMAGE_URL }}" -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply   --auto-approve tfplan
