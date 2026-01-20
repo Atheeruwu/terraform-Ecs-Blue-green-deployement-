@@ -1,81 +1,69 @@
-ECS Blue-Green Deployment with Terraform
-Overview
+# ECS Blue-Green Deployment with Terraform
 
-This project demonstrates how to implement blue-green deployment for containerized applications on AWS ECS using Terraform.
-The goal is to achieve zero-downtime deployments, safe traffic switching, and fully reproducible infrastructure using Infrastructure as Code.
+## Overview
+This repository demonstrates a **blue-green deployment strategy** for containerized applications on **AWS ECS (Fargate)** using **Terraform**.  
+The setup enables **zero-downtime deployments** by switching traffic between two identical environments (blue and green) behind an Application Load Balancer.
 
-Architecture
+All infrastructure is provisioned using **Infrastructure as Code (IaC)**, ensuring repeatable, version-controlled, and production-ready deployments.
 
-Amazon ECS (Fargate)
+---
 
-Application Load Balancer (ALB)
+## Architecture
+- Amazon ECS (Fargate)
+- Application Load Balancer (ALB)
+- Blue & Green Target Groups
+- Amazon ECR
+- VPC, Subnets, Security Groups
+- IAM Roles and Policies
+- Terraform (modular configuration)
 
-Target Groups (Blue / Green)
+Traffic is routed through the ALB, allowing safe traffic switching between environments during deployments.
 
-Amazon ECR
+---
 
-VPC, Subnets, Security Groups
+## Features
+- Blue-green deployment strategy on ECS
+- Zero-downtime application updates
+- Infrastructure fully provisioned with Terraform
+- Modular and reusable Terraform code
+- Safe rollback by switching target groups
+- Cloud-native AWS architecture
 
-IAM Roles & Policies
+---
 
-Terraform Modules
+## Implementation Details
+- Defined ECS task definitions and services for blue and green environments
+- Configured ALB listeners and target groups for controlled traffic routing
+- Provisioned AWS resources (VPC, ECS, ALB, IAM, ECR) using Terraform
+- Used Terraform variables and modules for flexibility and reusability
+- Followed Infrastructure as Code best practices for idempotent deployments
 
-Traffic is routed through an Application Load Balancer, allowing seamless switching between blue and green environments during deployments.
+---
 
-Key Features
+## Technologies Used
+- **AWS:** ECS (Fargate), ALB, ECR, IAM, VPC
+- **Infrastructure as Code:** Terraform
+- **Containers:** Docker
+- **Version Control:** Git, GitHub
 
-Blue-green deployment strategy for ECS services
+---
 
-Zero-downtime application updates
+## Use Case
+This project is suitable for environments where:
+- High availability is required
+- Application downtime must be avoided during deployments
+- Rollback needs to be fast and reliable
+- Infrastructure must be reproducible and version-controlled
 
-Infrastructure provisioned entirely with Terraform
+---
 
-Modular and reusable Terraform configuration
+## Future Enhancements
+- CI/CD integration using GitHub Actions or Jenkins
+- Monitoring and logging with CloudWatch or Prometheus
+- Canary deployment support
+- Multi-environment setup (dev, staging, production)
 
-Clear separation of environments (blue & green)
+---
 
-Safe rollback capability by switching target groups
-
-What I Implemented
-
-Designed ECS task definitions and services for blue and green environments
-
-Configured ALB listeners and target groups for traffic shifting
-
-Provisioned AWS infrastructure using Terraform (VPC, ECS, ALB, IAM, ECR)
-
-Implemented Terraform variables and modules for flexibility and reuse
-
-Ensured idempotent and repeatable deployments using IaC best practices
-
-Technologies Used
-
-Cloud: AWS (ECS, ALB, ECR, IAM, VPC)
-
-Infrastructure as Code: Terraform
-
-Containers: Docker
-
-Version Control: Git, GitHub
-
-How This Project Demonstrates DevOps Skills
-
-Practical understanding of blue-green deployment strategies
-
-Hands-on experience with AWS ECS and Fargate
-
-Strong foundation in Terraform and Infrastructure as Code
-
-Knowledge of load balancing, traffic routing, and rollback strategies
-
-Focus on automation, reliability, and deployment safety
-
-Use Case
-
-This setup is suitable for production environments where:
-
-Zero downtime is required during deployments
-
-Safe rollback is critical
-
-Infrastructure needs to be versioned and reproducible
+## Repository Purpose
+This project was created to practice and demonstrate real-world DevOps deployment patterns using AWS and Terraform.
